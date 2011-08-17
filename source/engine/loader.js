@@ -222,10 +222,21 @@
       
       if (this.nextModuleSrc) {
         if (obj instanceof Function) {
-          this._dependOn(dependencies, (function(module) {return function() {
-            var ret = obj();
-            module.exports = ret;
-          };})(this.script(this.nextModuleSrc)));
+          this._dependOn(dependencies, (bindSelf(function(module) {
+              return bindSelf(function() {
+            var lateObject = {};
+            lateObject.onload = this._onload(lateObject);
+            this._dependOn([lateObject], module);
+            var ret;
+            var initFunc = function(exports) {
+              module.exports = exports;
+              lateObject.onload();
+            };
+            ret = obj(initFunc);
+            if (ret) {
+              initFunc(ret);
+            }
+          }, this);}, this))(this.script(this.nextModuleSrc)));
         } else {
           this._dependOn(dependencies, obj);
         }

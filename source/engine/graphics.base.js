@@ -4,7 +4,9 @@ l.dependOn(
   l.script('externals/class.js'),
   l.text('shaders/basic.vsh'),
   l.text('shaders/basic.fsh'),
-function() {
+  l.text('shaders/textureless.vsh'),
+  l.text('shaders/textureless.fsh'),
+function(init) {
 
 var instance = null;
 var gl = null;
@@ -26,6 +28,9 @@ var Graphics = Class.extend({
     this.shaders = [];
     this.shaderMap = {};
     
+    gl.clearColor(0,140,255,255);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    
     l.dependOn(this.loadShader('shaders/basic'), bindSelf(function() {
       console.log('shader loaded');
       this.useShaderNamed('shaders/basic');
@@ -41,7 +46,7 @@ var Graphics = Class.extend({
   useShaderNamed: function(name) {
     gl.useProgram(this.shaderMap[name]);
   },
-  loadShader: function(name) {
+  loadShader: function(name, attribKeys, uniformKeys) {
     if (this.shaderMap[name]) return this.shaderMap[name];
     
     var program = gl.createProgram();
@@ -78,7 +83,22 @@ var Graphics = Class.extend({
     gl.linkProgram(program);
     program.onload();
     
-    gl.getAttribLocation(program.
+    program.attributes = new Array(gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+    program.attributeMap = {};
+    
+    var attribKeys = ['position', 'color', 'texcoord0'];
+    for (var i = 0; i < attribKeys.length; i++) {
+      var attrib = gl.getAttribLocation(program, 'a_' + attribKeys[i]);
+      if (attrib !== null) {
+        program.attributes[attrib] = attribKeys[i];
+        program.attributeMap[attribKeys[i]] = i;
+      }
+    }
+    
+    program.uniforms = new Array();
+    program.uniformMap = {};
+    
+    var uniformKeys
   },
   setData: function(arrays) {
     for (var i = 0; i < arguments.length; i++) {
@@ -162,7 +182,9 @@ Graphics.getInstance = function() {
   return instance;
 };
 
-return {
-  Graphics: Graphics
-};
+l.dependOn(Graphics.getInstance(), function() {
+  init({
+    Graphics: Graphics
+  });
+});
 });
