@@ -1,12 +1,3 @@
-// 
-// 
-// var onload = l.dependOn(l.script('engine/graphics.base.js'));
-// l.dependOn(
-//   l.script('externals/class.js'),
-//   l.text('shaders/basic.vsh'),
-//   l.text('shaders/basic.fsh'),
-//   l.script('engine/graphics.base.js'));
-
 l.declare('engine/graphics.base.js');
 
 l.dependOn(
@@ -86,8 +77,83 @@ var Graphics = Class.extend({
   linkShader: function(program) {
     gl.linkProgram(program);
     program.onload();
+    
+    gl.getAttribLocation(program.
+  },
+  setData: function(arrays) {
+    for (var i = 0; i < arguments.length; i++) {
+      var array = arguments[i];
+      
+    }
+  },
+  draw: function(primitive) {
+    
   }
 }, "Graphics");
+
+// static values and functions
+Object.extend(Graphics, {
+  ValueType: {
+    Vertex: 0,
+    Color: 1,
+    TexCoord: 2,
+  },
+  AttribLocations: [
+    'position',
+    'color',
+    'texcoord0'
+  ],
+  array: function(type, count, valueType, size, values) {
+    var totalSize = 0;
+    
+    var packing = [];
+    
+    var argSets = [];
+    for (var i = 2; i < arguments.length; i += 3) {
+      totalSize += arguments[i+1];
+      argSets.push([arguments[i],arguments[i+1],arguments[i+2]]);
+      packing.push([arguments[i],arguments[i+1]]);
+    }
+    
+    var array = new type(totalSize * count);
+    array.packing = packing;
+    
+    var offset = 0;
+    for (i = 0; i < argSets.length; i++) {
+      array.packing[i].push(offset);
+      
+      var size = argSets[i][1];
+      var values = argSets[i][2];
+      if (values) {
+        if (values.length == argSets[i][1]) {
+          for (var j = 0, l = size * count; j < l; j++) {
+            array[Math.floor(j / size) * totalSize + offset + j % size] = values[j % size];
+          }
+        } else {
+          for (var j = 0, l = values.length; j < l; j++) {
+            array[Math.floor(j / size) * totalSize + offset + j % size] = values[j];
+          }
+        }
+      }
+      
+      offset += array.packing[i][1];
+    }
+    
+    if (argSets.length > 0) {
+      array.stride = offset;
+    } else {
+      array.stride = 0;
+    }
+    
+    return array;
+  },
+  colorArray: function(count, values) {
+    return Graphics.array(Uint8Array, count, Graphics.ValueType.Color, 4, values);
+  }
+  // vertexArray: function(count, size, values) {
+  //   var array = new Float32Array(size * count);
+  // }
+});
 
 Graphics.getInstance = function() {
   if (instance == null) {
