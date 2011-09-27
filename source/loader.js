@@ -44,11 +44,10 @@
         this.shift();
       }
     },
-    removeAtIndex: Array.prototype.removeAt,
     removeLastObject: function() {
       this.pop();
     },
-    removeAtIndexFast: function(index) {
+    removeAtFast: function(index) {
       this[index] = this[this.length-1];
       this.pop();
     },
@@ -57,7 +56,6 @@
         this.pop();
       }
     },
-    removeAll: Array.prototype.clear,
     swap: function(i, j) {
       var temp = this[i];
       this[i] = this[j];
@@ -81,8 +79,28 @@
     };
   };
   
-  var Loader = function(){
+  Loader = function(){
     this.init();
+  };
+  Loader.define = function(types) {
+    for (var key in types) {
+      (function() {
+        var name = key;
+        var type = types[key];
+      this.prototype[key] = function(src, options) {
+        var options = options || {isContent: true};
+        src = this._correctSource(src, options);
+        
+        if (this.loaded[src]) return this.loaded[src];
+        
+        var instance = type.call(this, src, options);
+        
+        this.loaded[src] = instance;
+
+        return instance;
+      };
+      }).call(this);
+    }
   };
   Loader.prototype = {
     init: function(options) {
@@ -102,32 +120,38 @@
             if (this.depends[obj._guid] == undefined || this.depends[obj._guid].length == 0) {
               var reverseDepends = this.reverseDepends[obj._guid];
               delete this.reverseDepends[obj._guid];
-          
-              reverseDepends.forEach(bindSelf(function(o2) {
-                this.depends[o2._guid].remove(obj);
-                var depends = this.depends[o2._guid];
-                if (depends.length == 0) {
-                  setTimeout(bindSelf(function() {
-                    if (depends.length == 0) {
-                      if (o2 instanceof Function) {
-                        o2(obj);
-                      } else if (o2.onload) {
-                        o2.onload(obj);
-                        delete o2.onload;
+              
+              if (reverseDepends) {
+                reverseDepends.forEach(bindSelf(function(o2) {
+                  this.depends[o2._guid].remove(obj);
+                  var depends = this.depends[o2._guid];
+                  if (depends.length == 0) {
+                    setTimeout(bindSelf(function() {
+                      if (depends.length == 0) {
+                        if (o2 instanceof Function) {
+                          o2(obj);
+                        } else if (o2.onload) {
+                          o2.onload(obj);
+                          delete o2.onload;
+                        }
+                        delete this.depends[o2._guid];
                       }
-                      delete this.depends[o2._guid];
-                    }
-                  }, this), 0);
-                }
-              }, this));
+                    }, this), 0);
+                  }
+                }, this));
+              }
             }
           }, this), 0);
         }
       }, this);
     },
     _correctSource: function(src, options) {
+      options.originalSource = src;
       if (options.isContent) {
         src = (this.contentPrefix || "") + src;
+      }
+      if (options.isScript) {
+        src = (this.scriptPrefix || "") + src;
       }
       return src;
     },
@@ -145,12 +169,18 @@
       
       return image;
     },
-    text: function(src) {
+    text: function(src, options) {
+      options = options || {};
+      
       src = this._correctSource(src, {isContent: true});
       
       if (this.loaded[src]) return this.loaded[src];
       
       var xhr = new XMLHttpRequest();
+      
+      if (options.responseType) {
+        xhr.responseType = options.responseType;
+      }
       
       xhr.src = src;
       xhr.onload = this._onload(xhr);
@@ -161,7 +191,15 @@
       
       return xhr;
     },
+    json: function(src) {
+      return this.text(src, {responseType: 'json'});
+    },
+    buffer: function(src) {
+      return this.text(src, {responseType: 'arraybuffer'});
+    },
     script: function(src) {
+      src = this._correctSource(src, {isScript: true});
+      
       if (this.options.fakeScript) this.loaded[src] = {loaded: true};
       
       if (this.loaded[src]) return this.loaded[src];
@@ -183,15 +221,27 @@
     // _initModule: function(src, exports) {
     //   
     // },
-    declare: function(src) {
-      this.nextModuleSrc = src;
+    declare: function(src, func) {
+      if (!func) {
+        this.nextModuleSrc = src;
+      } else {
+        var obj = this.loaded[src] = {};
+        func.call(this, bindSelf(function(value) {
+          this.loaded[src] = value;
+          value._guid = obj._guid;
+          this._onload(value)();
+        }, this));
+      }
+      
+      return this;
     },
     _dependOn: function(depArray, obj) {
       depArray.forEach(bindSelf(function(dependency) {
         if (!dependency._guid) dependency._guid = guid();
         if (!obj._guid) obj._guid = guid();
         
-        if (!this.depends[obj._guid]) this.depends[obj._guid] = [dependency];
+        if (!this.depends[obj._guid]) 
+          this.depends[obj._guid] = [dependency];
         else this.depends[obj._guid].push(dependency)
         
         if (!this.reverseDepends[dependency._guid]) 
@@ -229,7 +279,7 @@
             this._dependOn([lateObject], module);
             var ret;
             var initFunc = function(exports) {
-              module.exports = exports;
+              Object.extend(module, exports);
               lateObject.onload();
             };
             ret = obj(initFunc);

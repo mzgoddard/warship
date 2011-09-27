@@ -1,0 +1,92 @@
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>texture</title>
+    <script src="../source/loader.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      l.scriptPrefix = '../source/';
+      l.contentPrefix = '../assets/';
+      
+      l.dependOn(l.script('engine/all.js'), function() {
+        function setup() {
+          var Graphics = l.script('engine/graphics.base.js').Graphics;
+          var ctx = Graphics.getInstance('canvas')
+            , gl = ctx.gl;
+          
+          l.dependOn(
+            ctx,
+            l.texture('texture.png'),
+            l.shader('shaders/textureless'),
+            function() {
+            // ctx.debug = true;
+            ctx.useShaderNamed('shaders/basic');
+
+            texture = l.texture('texture.png');
+            texture.clamp = true;
+            texture.bind(gl.TEXTURE0);
+            
+            buffer = ctx.buffer()
+              .load(Graphics.array(
+                Float32Array,
+                4,
+                
+                Graphics.ValueType.Vertex,
+                2,
+                [64,-64, 64,64, -64,-64, -64,64],
+                
+                Graphics.ValueType.Color,
+                4,
+                [1,1,1,1],
+                
+                Graphics.ValueType.TexCoord,
+                2,
+                [1,1, 1,0, 0,1, 0,0]
+              ))
+              .bind();
+            
+            var angle = 0;
+            
+            function draw() {
+              webkitRequestAnimationFrame(draw);
+              // setTimeout(draw, 0.2);
+              
+              var canvas = ctx.canvas
+                , width = canvas.width
+                , height = canvas.height;
+              
+              ctx.resize();
+              mat4.ortho(
+                -width/2,
+                width/2,
+                -height/2,
+                height/2,
+                0, 1000,
+                ctx.projectionMatrix);
+              // mat4.translate(
+              //   ctx.modelviewMatrix, 
+              //   vec3.create([-0.5,0,0]));
+              
+              angle += 0.016;
+              mat4.identity(ctx.modelviewMatrix);
+              mat4.rotateZ(
+                ctx.modelviewMatrix,
+                angle);
+              
+              gl.clear(gl.COLOR_BUFFER_BIT);
+              buffer.triangleStrip();
+            }
+            
+            draw();
+            
+            console.log('done');
+          });
+        }
+        
+        setup();
+      });
+    </script>
+  </head>
+  <body>
+    <canvas width="640" height="480"></canvas>
+  </body>
+</html>

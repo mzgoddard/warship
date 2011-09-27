@@ -1,0 +1,61 @@
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <title>webgl</title>
+  <script type="text/javascript" charset="utf-8">
+    function setup() {
+      var canvas = document.getElementsByTagName('canvas')[0];
+      var gl = canvas.getContext('experimental-webgl');
+      
+      var program = gl.createProgram();
+      
+      var shader = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(
+        shader,
+        'attribute vec3 position;\n'+
+        'void main() {\n'+
+        '  gl_Position = vec4(position,1);\n'+
+        '}'
+      );
+      gl.compileShader(shader);
+      gl.attachShader(program, shader);
+      
+      shader = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(
+        shader,
+        'void main() {\n'+
+        '  gl_FragColor = vec4(1, 0, 0, 1);\n'+
+        '}'
+      );
+      gl.compileShader(shader);
+      gl.attachShader(program, shader);
+      
+      gl.linkProgram(program);
+      
+      gl.useProgram(program);
+      
+      var attrLocation = gl.getAttribLocation(program, 'position');
+      gl.enableVertexAttribArray(attrLocation);
+      
+      var array = new Float32Array([
+        0, 1, 0,
+        0.7, -0.7, 0,
+        -0.7, -0.7, 0
+      ]);
+      
+      var buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, array, gl.STREAM_DRAW);
+      
+      gl.vertexAttribPointer(attrLocation, 3, gl.FLOAT, false, 0, 0);
+      
+      // start drawing
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0,0,0,1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+  </script>
+  <body onload="setup()">
+    <canvas width="640" height="480"></canvas>
+  </body>
+</head>

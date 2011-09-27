@@ -1,15 +1,15 @@
 uniform mat4 modelview_projection;
 
 attribute vec4 a_position;
-attribute vec2 a_texcoord0;
 attribute vec4 a_color;
+attribute vec2 a_texcoord0;
 
-varying vec2 v_texcoord0;
-varying vec4 v_color;
+varying highp vec2 v_texcoord0;
+varying lowp vec4 v_color;
 
 void main() {
   gl_Position = modelview_projection * a_position;
   
-  v_texcoord = a_texcoord;
+  v_texcoord0 = a_texcoord0;
   v_color = a_color;
 }
