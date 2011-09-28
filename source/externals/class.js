@@ -97,11 +97,17 @@
     //   if ( !initializing && this.init )
     //     this.init.apply(this, arguments);
     // }
-    Class = eval("(function "+className+"() {"+
-// "      // All construction is actually done in the init method"+
-"      if ( !initializing && this.init )"+
-"        this.init.apply(this, arguments);"+
-"    })");
+//     Class = eval("(function "+className+"() {"+
+// // "      // All construction is actually done in the init method"+
+// "      if ( !initializing && this.init )"+
+// "        this.init.apply(this, arguments);"+
+// "    })");
+    
+    function Class() {
+      // All construction is actually done in the init method
+      if ( !initializing && this.init )
+        this.init.apply(this, arguments);
+    }
     
     // Populate our constructed prototype object
     Class.prototype = prototype;

@@ -413,6 +413,7 @@ Object.extend(Loader.prototype, {
 });
 
 return {
-    Graphics: Graphics
+    Graphics: Graphics,
+    Buffer: Buffer
   };
 });

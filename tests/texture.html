@@ -9,7 +9,9 @@
       
       l.dependOn(l.script('engine/all.js'), function() {
         function setup() {
-          var Graphics = l.script('engine/graphics.base.js').Graphics;
+          var graphics_base = l.script('engine/graphics.base.js')
+            , Graphics = graphics_base.Graphics
+            , Buffer = graphics_base.Buffer;
           var ctx = Graphics.getInstance('canvas')
             , gl = ctx.gl;
           
@@ -41,30 +43,26 @@
                 Graphics.ValueType.TexCoord,
                 2,
                 [1,1, 1,0, 0,1, 0,0]
-              ))
+              ), Buffer.Usage.Static)
               .bind();
+            
+            var canvas = ctx.canvas
+              , width = canvas.width
+              , height = canvas.height;
+            
+            ctx.resize();
+            mat4.ortho(
+              -width/2,
+              width/2,
+              -height/2,
+              height/2,
+              0, 1000,
+              ctx.projectionMatrix);
             
             var angle = 0;
             
             function draw() {
               webkitRequestAnimationFrame(draw);
-              // setTimeout(draw, 0.2);
-              
-              var canvas = ctx.canvas
-                , width = canvas.width
-                , height = canvas.height;
-              
-              ctx.resize();
-              mat4.ortho(
-                -width/2,
-                width/2,
-                -height/2,
-                height/2,
-                0, 1000,
-                ctx.projectionMatrix);
-              // mat4.translate(
-              //   ctx.modelviewMatrix, 
-              //   vec3.create([-0.5,0,0]));
               
               angle += 0.016;
               mat4.identity(ctx.modelviewMatrix);
