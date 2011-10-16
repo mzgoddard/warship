@@ -79,7 +79,7 @@
     };
   };
   
-  Loader = function(){
+  function Loader(){
     this.init();
   };
   Loader.define = function(types) {
