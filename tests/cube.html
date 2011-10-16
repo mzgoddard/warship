@@ -1,0 +1,99 @@
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>texture</title>
+    <script src="../source/loader.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      l.scriptPrefix = '../source/';
+      l.contentPrefix = '../assets/';
+      
+      l.dependOn(l.script('engine/all.js'), function() {
+        function setup() {
+          var graphics_base = l.script('engine/graphics.base.js')
+            , Graphics = graphics_base.Graphics
+            , Buffer = graphics_base.Buffer;
+          var ctx = Graphics.getInstance('canvas')
+            , gl = ctx.gl;
+          
+          gl.enable(gl.DEPTH_TEST);
+          
+          l.dependOn(
+            ctx,
+            l.shader('shaders/textureless'),
+            function() {
+            ctx.useShaderNamed('shaders/textureless');
+            
+            buffer = ctx.buffer()
+              .load(Graphics.array(
+                Float32Array,
+                14,
+                
+                Graphics.ValueType.Vertex,
+                3,
+                [
+                  64,-64,-64, 64,64,-64, -64,-64,-64, -64,64,-64,
+                  -64,64,64, 64,64,-64, 64,64,64, 64,-64,-64,
+                  64,-64,64, -64,-64,-64, -64,-64,64, -64,64,64,
+                  64,-64,64, 64,64,64
+                ],
+                
+                Graphics.ValueType.Color,
+                4,
+                [
+                  1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+                  1,0,0,1, 1,1,1,1, 1,0,0,1, 1,1,1,1,
+                  1,0,0,1, 1,1,1,1, 1,0,0,1, 1,0,0,1,
+                  1,0,0,1, 1,0,0,1
+                ]
+              ), Buffer.Usage.Static)
+              .bind();
+            
+            var canvas = ctx.canvas
+              , width = canvas.width
+              , height = canvas.height;
+            
+            ctx.resize();
+            mat4.identity(ctx.projectionMatrix);
+            mat4.perspective(
+              60,width/height,
+              0.3, 1000,
+              ctx.projectionMatrix);
+            
+            var angle = 0;
+            
+            function draw() {
+              webkitRequestAnimationFrame(draw);
+              
+              angle += 0.016;
+              mat4.identity(ctx.modelviewMatrix);
+              mat4.lookAt(
+                [0,0,-400],
+                [0,0,0],
+                [0,1,0],
+                ctx.modelviewMatrix);
+              mat4.rotateZ(
+                ctx.modelviewMatrix,
+                angle);
+              mat4.rotateY(
+                ctx.modelviewMatrix,
+                angle);
+              // mat4.translate(
+              //   ctx.modelviewMatrix,
+              //   [0,0,-100]);
+              
+              gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+              buffer.triangleStrip();
+            }
+            
+            draw();
+          });
+        }
+        
+        setup();
+      });
+    </script>
+  </head>
+  <body>
+    <canvas width="640" height="480"></canvas>
+  </body>
+</html>
